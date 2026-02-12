@@ -8,10 +8,8 @@ const STORE_NAME = 'messages';
 document.addEventListener('DOMContentLoaded', async () => {
     await initDB();
     
-    // Register PWA Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
-            .then(() => console.log('Service Worker Registered'))
             .catch(err => console.log('SW Fail:', err));
     }
 
@@ -29,19 +27,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
         request.onupgradeneeded = (e) => {
             db = e.target.result;
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 db.createObjectStore(STORE_NAME, { keyPath: 'id' });
             }
         };
-
-        request.onsuccess = (e) => {
-            db = e.target.result;
-            resolve(db);
-        };
-        
+        request.onsuccess = (e) => { db = e.target.result; resolve(db); };
         request.onerror = (e) => reject(e);
     });
 }
@@ -144,10 +136,11 @@ async function fetchInbox() {
             await loadCachedMessages();
         }
     } catch (e) {
-        console.log("Offline atau Error Fetch");
+        console.log("Offline/Error Fetch");
     }
 }
 
+// --- FUNGSI RENDER UTAMA DIUPDATE ---
 function renderMessages(messages) {
     const unreadContainer = document.getElementById('unreadList');
     const readContainer = document.getElementById('readList');
@@ -159,14 +152,22 @@ function renderMessages(messages) {
     messages.sort((a, b) => new Date(b.created) - new Date(a.created));
 
     messages.forEach((msg) => {
+        // Ambil inisial huruf pertama
+        const initial = msg.from ? msg.from.charAt(0).toUpperCase() : '?';
+        // Format waktu (ambil jam saja biar rapi)
+        const timeDisplay = msg.created.split(' ')[1] || msg.created;
+
         const html = `
             <div class="message-card ${msg.isRead ? 'read' : 'unread'}" onclick="openMessage('${msg.id}')">
-                <div class="msg-top">
-                    <span class="msg-from">${msg.from}</span>
-                    <span class="msg-time">${msg.created}</span>
+                <div class="msg-avatar">${initial}</div>
+                <div class="msg-content">
+                    <div class="msg-header">
+                        <span class="msg-from">${msg.from}</span>
+                        <span class="msg-time">${timeDisplay}</span>
+                    </div>
+                    <div class="msg-subject">${msg.subject || '(Tanpa Subjek)'}</div>
+                    <div class="msg-snippet">${msg.message}</div>
                 </div>
-                <div class="msg-subject">${msg.subject || '(Tanpa Subjek)'}</div>
-                <div class="msg-snippet">${msg.message}</div>
             </div>
         `;
 
@@ -190,10 +191,19 @@ async function openMessage(msgId) {
     
     if (!msg) return;
 
+    // Data untuk Modal
+    const initial = msg.from ? msg.from.charAt(0).toUpperCase() : '?';
     document.getElementById('modalSubject').innerText = msg.subject || '(No Subject)';
-    document.getElementById('modalFrom').innerText = msg.from;
-    document.getElementById('modalTime').innerText = msg.created;
     document.getElementById('modalBody').innerText = msg.message;
+    
+    // Inject Meta Info ke Modal
+    document.getElementById('modalMeta').innerHTML = `
+        <div class="meta-avatar">${initial}</div>
+        <div class="meta-info">
+            <span class="meta-from">${msg.from}</span>
+            <span class="meta-time">${msg.created}</span>
+        </div>
+    `;
     
     const modal = document.getElementById('msgModal');
     modal.classList.add('show');
