@@ -3,57 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Temp Mail Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Temp Mail SANN404</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
-        <header>
-            <div class="logo">
-                <i class="bi bi-shield-lock-fill"></i>
-                <h1>TempMail</h1>
-            </div>
-            <div class="status-badge" id="statusBadge">
-                <span class="dot"></span>
-                <span id="statusText">Ready</span>
-            </div>
-        </header>
 
-        <div class="email-card">
-            <div class="label">Alamat Email Sementara Anda</div>
-            <div class="email-display-wrapper">
-                <div class="email-box" id="emailAddress">Memuat...</div>
-                <button class="btn-icon" id="copyBtn" onclick="copyEmail()">
-                    <i class="bi bi-copy"></i>
-                </button>
+    <div class="top-bar">
+        <div class="app-name">SANN404 Mail</div>
+        <div class="user-avatar">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
+        </div>
+    </div>
+
+    <main id="main-container">
+        
+        <section id="view-home" class="tab-view active">
+            <div class="hero-card">
+                <div class="icon-glow">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <h2>Temp Identity</h2>
+                <p>Gunakan email sementara ini untuk verifikasi agar privasi utamamu tetap aman.</p>
+            </div>
+
+            <div class="email-action-area">
+                <label>Email Kamu Saat Ini</label>
+                <div class="email-display">
+                    <span id="emailAddress">Generating...</span>
+                    <button onclick="copyEmail()" class="copy-btn"><i class="bi bi-copy"></i></button>
+                </div>
+                <div class="status-indicator">
+                    <span class="dot"></span> <span id="timerText">Auto-refresh: 10s</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-inbox" class="tab-view">
+            <div class="section-header">
+                <h2>Riwayat Inbox</h2>
+                <p>Pesan yang sudah kamu baca tersimpan di sini.</p>
+            </div>
+            <div id="readList" class="message-list">
+                <div class="empty-placeholder">
+                    <i class="bi bi-inbox"></i>
+                    <p>Belum ada pesan yang dibaca.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-updates" class="tab-view">
+            <div class="section-header">
+                <h2>Update Baru <span class="badge" id="badge-count" style="display:none">0</span></h2>
+                <p>Pesan baru akan muncul di sini.</p>
+            </div>
+            <div id="unreadList" class="message-list">
+                <div class="empty-placeholder">
+                    <i class="bi bi-bell-slash"></i>
+                    <p>Tidak ada pesan baru.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-docs" class="tab-view">
+            <div class="section-header">
+                <h2>Dokumentasi</h2>
+                <p>Tentang Aplikasi & Developer</p>
             </div>
             
-            <div class="action-buttons">
-                <button class="btn btn-secondary" onclick="generateNewEmail()">
-                    <i class="bi bi-arrow-clockwise"></i> Ganti Email
-                </button>
-                <div class="countdown">Refresh: <span id="timer">10</span>s</div>
+            <div class="doc-card">
+                <h3><i class="bi bi-code-slash"></i> Cara Penggunaan</h3>
+                <ul>
+                    <li>Tekan tombol <strong>+</strong> atau Home untuk generate email.</li>
+                    <li>Salin email dan gunakan untuk daftar akun.</li>
+                    <li>Cek tab <strong>Updates</strong> untuk pesan masuk.</li>
+                    <li>Klik pesan untuk membaca. Setelah dibaca, pesan pindah ke <strong>Inbox</strong>.</li>
+                </ul>
+            </div>
+
+            <div class="doc-card developer-card">
+                <h3>Developer Info</h3>
+                <p class="dev-name">SANN404 FORUM</p>
+                <p>Aplikasi ini dibuat untuk melindungi privasi user dari spam. Backend menggunakan Node.js dan Frontend Modern UI.</p>
+                <a href="https://whatsapp.com/channel/0029VbBWTAzJP211mgzALI2p" target="_blank" class="btn-whatsapp">
+                    <i class="bi bi-whatsapp"></i> Join Saluran Developer
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('view-home', this)">
+            <i class="bi bi-house-door"></i>
+            <span>Home</span>
+        </div>
+        
+        <div class="nav-item" onclick="switchTab('view-inbox', this)">
+            <i class="bi bi-archive"></i>
+            <span>Inbox</span>
+        </div>
+
+        <div class="nav-fab-wrapper">
+            <div class="nav-fab" onclick="confirmNewEmail()">
+                <i class="bi bi-plus-lg"></i>
             </div>
         </div>
 
-        <div class="inbox-section">
-            <div class="inbox-header">
-                <h2>Kotak Masuk</h2>
-                <span class="badge" id="inboxCount">0</span>
+        <div class="nav-item" onclick="switchTab('view-updates', this)">
+            <div class="icon-wrapper">
+                <i class="bi bi-bell"></i>
+                <div class="nav-dot" id="nav-dot" style="display: none;"></div>
             </div>
-            
-            <div id="inboxList" class="inbox-list">
-                <div class="empty-state">
-                    <i class="bi bi-envelope-open"></i>
-                    <p>Menunggu pesan masuk...</p>
-                </div>
+            <span>Updates</span>
+        </div>
+
+        <div class="nav-item" onclick="switchTab('view-docs', this)">
+            <i class="bi bi-grid"></i> <span>Docs</span>
+        </div>
+    </nav>
+
+    <div id="msgModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalSubject">Subject</h3>
+                <button onclick="closeModal()" class="close-btn"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-meta">
+                <span id="modalFrom">From</span> • <span id="modalTime">Time</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                ...
             </div>
         </div>
     </div>
 
-    <div id="toast" class="toast">Email disalin!</div>
+    <div id="toast" class="toast">Disalin ke clipboard!</div>
 
     <script src="script.js"></script>
 </body>
