@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Temp Mail Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <i class="bi bi-shield-lock-fill"></i>
+                <h1>TempMail</h1>
+            </div>
+            <div class="status-badge" id="statusBadge">
+                <span class="dot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+        </header>
+
+        <div class="email-card">
+            <div class="label">Alamat Email Sementara Anda</div>
+            <div class="email-display-wrapper">
+                <div class="email-box" id="emailAddress">Memuat...</div>
+                <button class="btn-icon" id="copyBtn" onclick="copyEmail()">
+                    <i class="bi bi-copy"></i>
+                </button>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="generateNewEmail()">
+                    <i class="bi bi-arrow-clockwise"></i> Ganti Email
+                </button>
+                <div class="countdown">Refresh: <span id="timer">10</span>s</div>
+            </div>
+        </div>
+
+        <div class="inbox-section">
+            <div class="inbox-header">
+                <h2>Kotak Masuk</h2>
+                <span class="badge" id="inboxCount">0</span>
+            </div>
+            
+            <div id="inboxList" class="inbox-list">
+                <div class="empty-state">
+                    <i class="bi bi-envelope-open"></i>
+                    <p>Menunggu pesan masuk...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Email disalin!</div>
+
+    <script src="script.js"></script>
+</body>
+</html>
