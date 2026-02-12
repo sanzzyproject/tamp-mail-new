@@ -1,37 +1,90 @@
 let currentEmail = localStorage.getItem('sann404_mail') || null;
-// Menyimpan ID pesan yang sudah dibaca (kombinasi pengirim + waktu)
-let readMessages = JSON.parse(localStorage.getItem('sann404_read_msgs') || "[]");
-let inboxData = [];
-let refreshInterval;
+let db; 
 
-document.addEventListener('DOMContentLoaded', () => {
+const DB_NAME = 'SannMailDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'messages';
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await initDB();
+    
+    // Register PWA Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('Service Worker Registered'))
+            .catch(err => console.log('SW Fail:', err));
+    }
+
     if (currentEmail) {
         document.getElementById('emailAddress').innerText = currentEmail;
-        fetchInbox();
+        await loadCachedMessages(); 
+        fetchInbox(); 
     } else {
         generateNewEmail();
     }
     
-    // Auto refresh setiap 10 detik
     startAutoRefresh();
 });
 
-// Tab Switcher
+function initDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            }
+        };
+
+        request.onsuccess = (e) => {
+            db = e.target.result;
+            resolve(db);
+        };
+        
+        request.onerror = (e) => reject(e);
+    });
+}
+
+function saveMessageToDB(msg) {
+    return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.put(msg); 
+        tx.oncomplete = () => resolve();
+    });
+}
+
+function getAllMessagesFromDB() {
+    return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result || []);
+    });
+}
+
+function clearAllMessagesDB() {
+    return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.clear();
+        tx.oncomplete = () => resolve();
+    });
+}
+
 function switchTab(viewId, element) {
-    // Hide all tabs
     document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
-    // Show selected tab
     document.getElementById(viewId).classList.add('active');
     
-    // Update nav active state
-    if(element) { // element null jika dipanggil dari fungsi lain
+    if(element) { 
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         element.classList.add('active');
     }
 }
 
 async function confirmNewEmail() {
-    if(confirm('Buat email baru? Inbox lama akan hilang.')) {
+    if(confirm('Buat email baru? Inbox lama akan dihapus permanen.')) {
         generateNewEmail();
     }
 }
@@ -40,9 +93,7 @@ async function generateNewEmail() {
     const emailDisplay = document.getElementById('emailAddress');
     emailDisplay.innerText = "Membuat ID baru...";
     
-    // Reset state lokal
-    readMessages = [];
-    localStorage.removeItem('sann404_read_msgs');
+    await clearAllMessagesDB(); 
     updateBadge(0);
     
     try {
@@ -54,19 +105,21 @@ async function generateNewEmail() {
             localStorage.setItem('sann404_mail', currentEmail);
             emailDisplay.innerText = currentEmail;
             
-            // Bersihkan tampilan
             document.getElementById('unreadList').innerHTML = emptyState('updates');
             document.getElementById('readList').innerHTML = emptyState('inbox');
             
-            // Pindah ke home
             switchTab('view-home', document.querySelector('.nav-item:first-child'));
-            
         } else {
             alert('Gagal: ' + data.result);
         }
     } catch (e) {
         emailDisplay.innerText = "Error Jaringan";
     }
+}
+
+async function loadCachedMessages() {
+    const messages = await getAllMessagesFromDB();
+    renderMessages(messages);
 }
 
 async function fetchInbox() {
@@ -77,15 +130,25 @@ async function fetchInbox() {
         const data = await res.json();
 
         if (data.success && data.result.inbox) {
-            inboxData = data.result.inbox;
-            processMessages(inboxData);
+            const serverMessages = data.result.inbox;
+            const existingMessages = await getAllMessagesFromDB();
+            
+            for (const msg of serverMessages) {
+                const msgId = `${msg.created}_${msg.from}`.replace(/\s/g, '');
+                const exists = existingMessages.find(m => m.id === msgId);
+                
+                if (!exists) {
+                    await saveMessageToDB({ ...msg, id: msgId, isRead: false });
+                }
+            }
+            await loadCachedMessages();
         }
     } catch (e) {
-        console.log("Fetch error (ignore if offline)");
+        console.log("Offline atau Error Fetch");
     }
 }
 
-function processMessages(messages) {
+function renderMessages(messages) {
     const unreadContainer = document.getElementById('unreadList');
     const readContainer = document.getElementById('readList');
     
@@ -93,14 +156,11 @@ function processMessages(messages) {
     let readHTML = '';
     let unreadCount = 0;
 
-    messages.forEach((msg, index) => {
-        // Kita buat ID unik sederhana dari kombinasi waktu + pengirim
-        const msgId = `${msg.created}_${msg.from}`.replace(/\s/g, '');
-        
-        const isRead = readMessages.includes(msgId);
-        
+    messages.sort((a, b) => new Date(b.created) - new Date(a.created));
+
+    messages.forEach((msg) => {
         const html = `
-            <div class="message-card ${isRead ? 'read' : 'unread'}" onclick="openMessage(${index}, '${msgId}', ${isRead})">
+            <div class="message-card ${msg.isRead ? 'read' : 'unread'}" onclick="openMessage('${msg.id}')">
                 <div class="msg-top">
                     <span class="msg-from">${msg.from}</span>
                     <span class="msg-time">${msg.created}</span>
@@ -110,7 +170,7 @@ function processMessages(messages) {
             </div>
         `;
 
-        if (isRead) {
+        if (msg.isRead) {
             readHTML += html;
         } else {
             unreadHTML += html;
@@ -118,17 +178,18 @@ function processMessages(messages) {
         }
     });
 
-    // Update DOM
     unreadContainer.innerHTML = unreadHTML || emptyState('updates');
     readContainer.innerHTML = readHTML || emptyState('inbox');
     
     updateBadge(unreadCount);
 }
 
-function openMessage(index, msgId, isAlreadyRead) {
-    const msg = inboxData[index];
+async function openMessage(msgId) {
+    const messages = await getAllMessagesFromDB();
+    const msg = messages.find(m => m.id === msgId);
     
-    // Tampilkan di modal
+    if (!msg) return;
+
     document.getElementById('modalSubject').innerText = msg.subject || '(No Subject)';
     document.getElementById('modalFrom').innerText = msg.from;
     document.getElementById('modalTime').innerText = msg.created;
@@ -137,13 +198,10 @@ function openMessage(index, msgId, isAlreadyRead) {
     const modal = document.getElementById('msgModal');
     modal.classList.add('show');
 
-    // Jika pesan dari tab Updates (belum dibaca), tandai sbg dibaca
-    if (!isAlreadyRead) {
-        readMessages.push(msgId);
-        localStorage.setItem('sann404_read_msgs', JSON.stringify(readMessages));
-        
-        // Refresh list tampilan di background
-        processMessages(inboxData);
+    if (!msg.isRead) {
+        msg.isRead = true;
+        await saveMessageToDB(msg); 
+        await loadCachedMessages(); 
     }
 }
 
