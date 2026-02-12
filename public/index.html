@@ -17,8 +17,9 @@
 
     <div class="top-bar">
         <div class="app-name">SANN404 Mail</div>
+        
         <div class="user-avatar">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="User">
         </div>
     </div>
 
@@ -48,33 +49,22 @@
         <section id="view-inbox" class="tab-view">
             <div class="section-header">
                 <h2>Riwayat Inbox</h2>
-                <p>Pesan yang sudah kamu baca tersimpan di sini.</p>
             </div>
             <div id="readList" class="message-list">
-                <div class="empty-placeholder">
-                    <i class="bi bi-inbox"></i>
-                    <p>Belum ada pesan yang dibaca.</p>
                 </div>
-            </div>
         </section>
 
         <section id="view-updates" class="tab-view">
             <div class="section-header">
                 <h2>Update Baru <span class="badge" id="badge-count" style="display:none">0</span></h2>
-                <p>Pesan baru akan muncul di sini.</p>
             </div>
             <div id="unreadList" class="message-list">
-                <div class="empty-placeholder">
-                    <i class="bi bi-bell-slash"></i>
-                    <p>Tidak ada pesan baru.</p>
                 </div>
-            </div>
         </section>
 
         <section id="view-docs" class="tab-view">
             <div class="section-header">
                 <h2>Dokumentasi</h2>
-                <p>Tentang Aplikasi & Developer</p>
             </div>
             
             <div class="doc-card">
@@ -90,7 +80,7 @@
             <div class="doc-card developer-card">
                 <h3>Developer Info</h3>
                 <p class="dev-name">SANN404 FORUM</p>
-                <p>Aplikasi ini dibuat untuk melindungi privasi user dari spam. Backend menggunakan Node.js dan Frontend Modern UI.</p>
+                <p>Aplikasi ini dibuat untuk melindungi privasi user dari spam.</p>
                 <a href="https://whatsapp.com/channel/0029VbBWTAzJP211mgzALI2p" target="_blank" class="btn-whatsapp">
                     <i class="bi bi-whatsapp"></i> Join Saluran Developer
                 </a>
@@ -136,12 +126,8 @@
                 <h3 id="modalSubject">Subject</h3>
                 <button onclick="closeModal()" class="close-btn"><i class="bi bi-x-lg"></i></button>
             </div>
-            <div class="modal-meta">
-                <span id="modalFrom">From</span> • <span id="modalTime">Time</span>
-            </div>
-            <div class="modal-body" id="modalBody">
-                ...
-            </div>
+            <div class="modal-meta" id="modalMeta"></div> 
+            <div class="modal-body" id="modalBody">...</div>
         </div>
     </div>
 
