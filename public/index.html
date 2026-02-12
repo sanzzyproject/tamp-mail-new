@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#F2F4F8"> <title>Temp Mail SANN404</title>
+    <meta name="theme-color" content="#F2F4F8">
+    <title>Temp Mail SANN404</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/732/732200.png">
@@ -13,287 +14,139 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    ```
 
-### 2. Update `public/script.js`
-Ini adalah **update besar** pada logikanya. Saya menghapus logika `localStorage` dan menggantinya dengan **IndexedDB**. Email akan disimpan permanen di browser sampai kamu generate email baru.
-
-Hapus semua isi `script.js` lama, ganti dengan ini:
-
-```javascript
-let currentEmail = localStorage.getItem('sann404_mail') || null;
-let db; // Variable untuk menyimpan koneksi IndexedDB
-
-// --- KONFIGURASI INDEXED DB ---
-const DB_NAME = 'SannMailDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'messages';
-
-// Init Aplikasi
-document.addEventListener('DOMContentLoaded', async () => {
-    await initDB(); // Buka Database dulu
-    
-    // Register PWA Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-            .then(() => console.log('Service Worker Registered'))
-            .catch(err => console.log('SW Fail:', err));
-    }
-
-    if (currentEmail) {
-        document.getElementById('emailAddress').innerText = currentEmail;
-        await loadCachedMessages(); // Tampilkan pesan tersimpan LANGSUNG!
-        fetchInbox(); // Lalu cek update baru ke server
-    } else {
-        generateNewEmail();
-    }
-    
-    startAutoRefresh();
-});
-
-// --- FUNGSI DATABASE (IndexedDB) ---
-function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
-        request.onupgradeneeded = (e) => {
-            db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                // Keypath menggunakan gabungan waktu+pengirim agar unik
-                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-            }
-        };
-
-        request.onsuccess = (e) => {
-            db = e.target.result;
-            resolve(db);
-        };
-        
-        request.onerror = (e) => reject(e);
-    });
-}
-
-function saveMessageToDB(msg) {
-    return new Promise((resolve) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        store.put(msg); // put = simpan atau update jika ada
-        tx.oncomplete = () => resolve();
-    });
-}
-
-function getAllMessagesFromDB() {
-    return new Promise((resolve) => {
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result || []);
-    });
-}
-
-function clearAllMessagesDB() {
-    return new Promise((resolve) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        store.clear();
-        tx.oncomplete = () => resolve();
-    });
-}
-
-// --- LOGIKA APLIKASI ---
-
-function switchTab(viewId, element) {
-    document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
-    document.getElementById(viewId).classList.add('active');
-    
-    if(element) { 
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        element.classList.add('active');
-    }
-}
-
-async function confirmNewEmail() {
-    if(confirm('Buat email baru? Inbox lama akan dihapus permanen.')) {
-        generateNewEmail();
-    }
-}
-
-async function generateNewEmail() {
-    const emailDisplay = document.getElementById('emailAddress');
-    emailDisplay.innerText = "Membuat ID baru...";
-    
-    await clearAllMessagesDB(); // Hapus database lama
-    updateBadge(0);
-    
-    try {
-        const res = await fetch('/api?action=generate');
-        const data = await res.json();
-        
-        if (data.success) {
-            currentEmail = data.result.email;
-            localStorage.setItem('sann404_mail', currentEmail);
-            emailDisplay.innerText = currentEmail;
-            
-            document.getElementById('unreadList').innerHTML = emptyState('updates');
-            document.getElementById('readList').innerHTML = emptyState('inbox');
-            
-            switchTab('view-home', document.querySelector('.nav-item:first-child'));
-        } else {
-            alert('Gagal: ' + data.result);
-        }
-    } catch (e) {
-        emailDisplay.innerText = "Error Jaringan";
-    }
-}
-
-async function loadCachedMessages() {
-    const messages = await getAllMessagesFromDB();
-    renderMessages(messages);
-}
-
-async function fetchInbox() {
-    if (!currentEmail) return;
-
-    try {
-        const res = await fetch(`/api?action=inbox&email=${currentEmail}`);
-        const data = await res.json();
-
-        if (data.success && data.result.inbox) {
-            const serverMessages = data.result.inbox;
-            
-            // Simpan pesan baru ke DB tanpa menimpa status 'read' yang sudah ada
-            // Kita cek dulu DB yang ada
-            const existingMessages = await getAllMessagesFromDB();
-            
-            for (const msg of serverMessages) {
-                const msgId = `${msg.created}_${msg.from}`.replace(/\s/g, '');
-                
-                // Cek apakah pesan ini sudah ada di DB
-                const exists = existingMessages.find(m => m.id === msgId);
-                
-                if (!exists) {
-                    // Jika pesan baru, simpan dengan status unread
-                    await saveMessageToDB({ ...msg, id: msgId, isRead: false });
-                }
-                // Jika sudah ada, jangan lakukan apa-apa agar status 'read' tidak tertimpa
-            }
-            
-            // Refresh tampilan dari DB
-            await loadCachedMessages();
-        }
-    } catch (e) {
-        console.log("Offline atau Error Fetch");
-    }
-}
-
-function renderMessages(messages) {
-    const unreadContainer = document.getElementById('unreadList');
-    const readContainer = document.getElementById('readList');
-    
-    let unreadHTML = '';
-    let readHTML = '';
-    let unreadCount = 0;
-
-    // Sort pesan biar yang terbaru di atas
-    messages.sort((a, b) => new Date(b.created) - new Date(a.created));
-
-    messages.forEach((msg) => {
-        // Render HTML
-        const html = `
-            <div class="message-card ${msg.isRead ? 'read' : 'unread'}" onclick="openMessage('${msg.id}')">
-                <div class="msg-top">
-                    <span class="msg-from">${msg.from}</span>
-                    <span class="msg-time">${msg.created}</span>
-                </div>
-                <div class="msg-subject">${msg.subject || '(Tanpa Subjek)'}</div>
-                <div class="msg-snippet">${msg.message}</div>
-            </div>
-        `;
-
-        if (msg.isRead) {
-            readHTML += html;
-        } else {
-            unreadHTML += html;
-            unreadCount++;
-        }
-    });
-
-    unreadContainer.innerHTML = unreadHTML || emptyState('updates');
-    readContainer.innerHTML = readHTML || emptyState('inbox');
-    
-    updateBadge(unreadCount);
-}
-
-async function openMessage(msgId) {
-    const messages = await getAllMessagesFromDB();
-    const msg = messages.find(m => m.id === msgId);
-    
-    if (!msg) return;
-
-    // Isi Modal
-    document.getElementById('modalSubject').innerText = msg.subject || '(No Subject)';
-    document.getElementById('modalFrom').innerText = msg.from;
-    document.getElementById('modalTime').innerText = msg.created;
-    document.getElementById('modalBody').innerText = msg.message;
-    
-    const modal = document.getElementById('msgModal');
-    modal.classList.add('show');
-
-    // Update status jadi READ di DB
-    if (!msg.isRead) {
-        msg.isRead = true;
-        await saveMessageToDB(msg); // Update DB
-        await loadCachedMessages(); // Refresh UI background
-    }
-}
-
-function closeModal() {
-    document.getElementById('msgModal').classList.remove('show');
-}
-
-function updateBadge(count) {
-    const badge = document.getElementById('badge-count');
-    const dot = document.getElementById('nav-dot');
-    
-    if (count > 0) {
-        badge.innerText = count;
-        badge.style.display = 'inline-block';
-        dot.style.display = 'block';
-    } else {
-        badge.style.display = 'none';
-        dot.style.display = 'none';
-    }
-}
-
-function emptyState(type) {
-    const icon = type === 'updates' ? 'bi-bell-slash' : 'bi-inbox';
-    const text = type === 'updates' ? 'Belum ada pesan baru.' : 'Belum ada pesan terbaca.';
-    return `
-        <div class="empty-placeholder">
-            <i class="bi ${icon}"></i>
-            <p>${text}</p>
+    <div class="top-bar">
+        <div class="app-name">SANN404 Mail</div>
+        <div class="user-avatar">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
         </div>
-    `;
-}
+    </div>
 
-function copyEmail() {
-    if (!currentEmail) return;
-    navigator.clipboard.writeText(currentEmail);
-    const toast = document.getElementById('toast');
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
-}
+    <main id="main-container">
+        
+        <section id="view-home" class="tab-view active">
+            <div class="hero-card">
+                <div class="icon-glow">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <h2>Temp Identity</h2>
+                <p>Gunakan email sementara ini untuk verifikasi agar privasi utamamu tetap aman.</p>
+            </div>
 
-function startAutoRefresh() {
-    let timeLeft = 10;
-    const timerText = document.getElementById('timerText');
-    
-    setInterval(() => {
-        timeLeft--;
-        timerText.innerText = `Auto-refresh: ${timeLeft}s`;
-        if (timeLeft <= 0) {
-            fetchInbox();
-            timeLeft = 10;
-        }
-    }, 1000);
-}
+            <div class="email-action-area">
+                <label>Email Kamu Saat Ini</label>
+                <div class="email-display">
+                    <span id="emailAddress">Generating...</span>
+                    <button onclick="copyEmail()" class="copy-btn"><i class="bi bi-copy"></i></button>
+                </div>
+                <div class="status-indicator">
+                    <span class="dot"></span> <span id="timerText">Auto-refresh: 10s</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-inbox" class="tab-view">
+            <div class="section-header">
+                <h2>Riwayat Inbox</h2>
+                <p>Pesan yang sudah kamu baca tersimpan di sini.</p>
+            </div>
+            <div id="readList" class="message-list">
+                <div class="empty-placeholder">
+                    <i class="bi bi-inbox"></i>
+                    <p>Belum ada pesan yang dibaca.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-updates" class="tab-view">
+            <div class="section-header">
+                <h2>Update Baru <span class="badge" id="badge-count" style="display:none">0</span></h2>
+                <p>Pesan baru akan muncul di sini.</p>
+            </div>
+            <div id="unreadList" class="message-list">
+                <div class="empty-placeholder">
+                    <i class="bi bi-bell-slash"></i>
+                    <p>Tidak ada pesan baru.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-docs" class="tab-view">
+            <div class="section-header">
+                <h2>Dokumentasi</h2>
+                <p>Tentang Aplikasi & Developer</p>
+            </div>
+            
+            <div class="doc-card">
+                <h3><i class="bi bi-code-slash"></i> Cara Penggunaan</h3>
+                <ul>
+                    <li>Tekan tombol <strong>+</strong> atau Home untuk generate email.</li>
+                    <li>Salin email dan gunakan untuk daftar akun.</li>
+                    <li>Cek tab <strong>Updates</strong> untuk pesan masuk.</li>
+                    <li>Klik pesan untuk membaca. Setelah dibaca, pesan pindah ke <strong>Inbox</strong>.</li>
+                </ul>
+            </div>
+
+            <div class="doc-card developer-card">
+                <h3>Developer Info</h3>
+                <p class="dev-name">SANN404 FORUM</p>
+                <p>Aplikasi ini dibuat untuk melindungi privasi user dari spam. Backend menggunakan Node.js dan Frontend Modern UI.</p>
+                <a href="https://whatsapp.com/channel/0029VbBWTAzJP211mgzALI2p" target="_blank" class="btn-whatsapp">
+                    <i class="bi bi-whatsapp"></i> Join Saluran Developer
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('view-home', this)">
+            <i class="bi bi-house-door"></i>
+            <span>Home</span>
+        </div>
+        
+        <div class="nav-item" onclick="switchTab('view-inbox', this)">
+            <i class="bi bi-archive"></i>
+            <span>Inbox</span>
+        </div>
+
+        <div class="nav-fab-wrapper">
+            <div class="nav-fab" onclick="confirmNewEmail()">
+                <i class="bi bi-plus-lg"></i>
+            </div>
+        </div>
+
+        <div class="nav-item" onclick="switchTab('view-updates', this)">
+            <div class="icon-wrapper">
+                <i class="bi bi-bell"></i>
+                <div class="nav-dot" id="nav-dot" style="display: none;"></div>
+            </div>
+            <span>Updates</span>
+        </div>
+
+        <div class="nav-item" onclick="switchTab('view-docs', this)">
+            <i class="bi bi-grid"></i>
+            <span>Docs</span>
+        </div>
+    </nav>
+
+    <div id="msgModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalSubject">Subject</h3>
+                <button onclick="closeModal()" class="close-btn"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-meta">
+                <span id="modalFrom">From</span> • <span id="modalTime">Time</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                ...
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">Disalin ke clipboard!</div>
+
+    <script src="script.js"></script>
+</body>
+</html>
