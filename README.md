@@ -10,6 +10,27 @@ Aplikasi Temporary Email (Email Sementara) modern berbasis Web & PWA dengan tamp
 - **Real-time:** Auto-refresh inbox tanpa reload halaman.
 - **Dokumentasi Terintegrasi:** Halaman dokumentasi teknis sudah tersedia di dalam web.
 
+## 📁 Struktur foldernya
+```bash
+SANN404-Temp-Mail/
+│
+├── api/
+│   └── index.js          <-- Backend (Serverless Function)
+│
+├── public/
+│   ├── index.html        <-- Halaman Utama (App)
+│   ├── docs.html         <-- Halaman Dokumentasi
+│   ├── style.css         <-- File CSS
+│   ├── script.js         <-- File JavaScript Logic
+│   ├── sw.js             <-- Service Worker (PWA)
+│   └── manifest.json     <-- Manifest (PWA)
+│
+├── .gitignore            <-- (PENTING) Agar file sampah tidak ikut keupload
+├── package.json          <-- Daftar library (dependencies)
+├── vercel.json           <-- Konfigurasi Deploy Vercel
+└── README.md
+```          
+
 ## 🛠️ Teknologi
 
 - **Frontend:** HTML5, CSS3 (Modern Variables), Vanilla JS (No Framework heavy overhead).
