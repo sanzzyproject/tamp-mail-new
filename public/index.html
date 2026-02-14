@@ -16,10 +16,9 @@
 <body>
 
     <div class="top-bar">
-        <div class="app-name">TempMail</div>
-        
+        <div class="app-name">SANN404 Mail</div>
         <div class="user-avatar">
-            <img src="https://cdn.odzre.my.id/cpz.jpg" alt="User">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="User">
         </div>
     </div>
 
@@ -38,7 +37,10 @@
                 <label>Email Kamu Saat Ini</label>
                 <div class="email-display">
                     <span id="emailAddress">Generating...</span>
-                    <button onclick="copyEmail()" class="copy-btn"><i class="bi bi-copy"></i></button>
+                    <div class="action-group">
+                        <button onclick="openShareModal()" class="icon-btn" title="Share NGL Style"><i class="bi bi-share-fill"></i></button>
+                        <button onclick="copyEmail()" class="icon-btn" title="Copy Email"><i class="bi bi-copy"></i></button>
+                    </div>
                 </div>
                 <div class="status-indicator">
                     <span class="dot"></span> <span id="timerText">Auto-refresh: 10s</span>
@@ -49,6 +51,9 @@
         <section id="view-inbox" class="tab-view">
             <div class="section-header">
                 <h2>Riwayat Inbox</h2>
+                <button onclick="clearInbox()" class="trash-btn" title="Hapus Semua Pesan">
+                    <i class="bi bi-trash3"></i>
+                </button>
             </div>
             <div id="readList" class="message-list">
                 </div>
@@ -89,7 +94,7 @@
                 <h3>Developer Info</h3>
                 <p class="dev-name">SANN404 FORUM</p>
                 <p>Aplikasi ini dibuat untuk melindungi privasi user dari spam.</p>
-                <a href="https://whatsapp.com/channel/0029Vb6ukqnHQbS4mKP0j80L" target="_blank" class="btn-whatsapp">
+                <a href="https://whatsapp.com/channel/0029VbBWTAzJP211mgzALI2p" target="_blank" class="btn-whatsapp">
                     <i class="bi bi-whatsapp"></i> Join Saluran Developer
                 </a>
             </div>
@@ -132,10 +137,30 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalSubject">Subject</h3>
-                <button onclick="closeModal()" class="close-btn"><i class="bi bi-x-lg"></i></button>
+                <button onclick="closeModal('msgModal')" class="close-btn"><i class="bi bi-x-lg"></i></button>
             </div>
             <div class="modal-meta" id="modalMeta"></div> 
             <div class="modal-body" id="modalBody">...</div>
+        </div>
+    </div>
+
+    <div id="shareModal" class="modal" style="align-items: center; justify-content: center;">
+        <div class="modal-content" style="border-radius: 20px; max-width: 350px;">
+            <div class="modal-header">
+                <h3>Share Email</h3>
+                <button onclick="closeModal('shareModal')" class="close-btn"><i class="bi bi-x-lg"></i></button>
+            </div>
+            
+            <div class="ngl-card">
+                <div class="ngl-icon">🤫</div>
+                <div class="ngl-title">Send me anonymous emails!</div>
+                <div class="ngl-email" id="maskedEmailDisplay">kewl***@domain.com</div>
+                <div class="ngl-footer">SANN404 Secure Mail</div>
+            </div>
+
+            <button onclick="copyMaskedText()" class="btn-whatsapp" style="width: 100%; justify-content: center; margin-top: 15px; background: var(--primary);">
+                <i class="bi bi-clipboard"></i> Copy Masked Text
+            </button>
         </div>
     </div>
 
