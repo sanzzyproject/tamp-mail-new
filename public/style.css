@@ -62,17 +62,14 @@ body {
     display: flex; background: #F3F4F6; padding: 6px 6px 6px 16px;
     border-radius: 12px; align-items: center; justify-content: space-between; margin-bottom: 15px;
 }
-.email-display span { font-family: monospace; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; color: var(--primary); }
-
-/* UPDATE: Group Tombol (Share & Copy) */
-.action-group { display: flex; gap: 8px; }
-.icon-btn {
+.email-display span { font-family: monospace; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%; color: var(--primary); }
+.copy-btn {
     background: white; border: none; width: 36px; height: 36px;
     border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     cursor: pointer; color: var(--primary); display: flex; align-items: center; justify-content: center;
     transition: transform 0.1s;
 }
-.icon-btn:active { transform: scale(0.9); }
+.copy-btn:active { transform: scale(0.9); }
 
 .status-indicator { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-muted); }
 .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
@@ -82,7 +79,6 @@ body {
 .section-header h2 { font-size: 1.4rem; color: var(--primary); }
 .badge { background: #ef4444; color: white; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
 
-/* UPDATE: Trash Button Style */
 .trash-btn {
     background: #FEE2E2; color: var(--danger); border: none;
     width: 40px; height: 40px; border-radius: 12px;
@@ -153,8 +149,9 @@ body {
 .modal.show { display: flex; opacity: 1; }
 .modal-content { background: white; width: 100%; border-radius: 24px 24px 0 0; padding: 30px 24px; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 .modal.show .modal-content { transform: translateY(0); }
-.modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+.modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; }
 .close-btn { background: #F3F4F6; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; }
+.share-btn-round { background: #EEF2FF; color: #4F46E5; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; }
 .modal-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #F3F4F6; }
 .meta-avatar { width: 44px; height: 44px; background: #EEF2FF; color: #4F46E5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; }
 .meta-info { display: flex; flex-direction: column; }
@@ -162,21 +159,28 @@ body {
 .meta-time { font-size: 0.75rem; color: var(--text-muted); }
 .modal-body { font-size: 1rem; line-height: 1.7; color: #374151; white-space: pre-wrap; word-wrap: break-word; }
 
-/* UPDATE: NGL Card Style */
-.ngl-card {
+/* NEW NGL MESSAGE CARD */
+.ngl-msg-card {
     background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
-    border-radius: 16px; padding: 30px 20px; text-align: center; color: white;
-    box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
-    margin-bottom: 10px; position: relative; overflow: hidden;
+    padding: 30px; text-align: center; color: white;
 }
-.ngl-icon { font-size: 3rem; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
-.ngl-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.ngl-email {
-    background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);
-    padding: 10px 15px; border-radius: 10px; font-family: monospace; font-size: 0.9rem;
-    border: 1px solid rgba(255,255,255,0.4); display: inline-block;
+.ngl-header { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 20px; }
+.ngl-icon-msg { font-size: 2.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+.ngl-header span { font-weight: 700; letter-spacing: 0.5px; opacity: 0.9; }
+
+.ngl-body-box {
+    background: rgba(255,255,255,0.95); color: #1F2937;
+    padding: 20px; border-radius: 16px; font-size: 1rem; font-weight: 500;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;
+    min-height: 80px; display: flex; align-items: center; justify-content: center;
 }
-.ngl-footer { margin-top: 20px; font-size: 0.7rem; opacity: 0.8; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+
+.ngl-footer-info { font-size: 0.75rem; opacity: 0.8; font-family: monospace; }
+.btn-secondary-full {
+    width: 100%; padding: 12px; border-radius: 50px; border: 1px solid #E5E7EB;
+    background: white; color: var(--primary); font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
 
 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #1f2937; color: white; padding: 12px 24px; border-radius: 50px; font-size: 0.85rem; z-index: 200; transition: transform 0.4s; }
 .toast.show { transform: translateX(-50%) translateY(0); }
