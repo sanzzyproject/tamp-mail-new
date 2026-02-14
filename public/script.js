@@ -1,5 +1,6 @@
 let currentEmail = localStorage.getItem('sann404_mail') || null;
 let db; 
+let currentOpenMsgData = null; // Variable global untuk simpan data pesan yg dibuka
 
 const DB_NAME = 'SannMailDB';
 const DB_VERSION = 1;
@@ -56,7 +57,6 @@ function getAllMessagesFromDB() {
     });
 }
 
-// UPDATE: Hapus semua pesan
 function clearAllMessagesDB() {
     return new Promise((resolve) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -66,12 +66,11 @@ function clearAllMessagesDB() {
     });
 }
 
-// UPDATE: Fungsi Tombol Hapus Inbox
 async function clearInbox() {
     if(confirm('Hapus semua pesan dari penyimpanan?')) {
         await clearAllMessagesDB();
-        renderMessages([]); // Bersihkan UI
-        document.getElementById('badge-count').style.display = 'none'; // Reset badge
+        renderMessages([]); 
+        document.getElementById('badge-count').style.display = 'none';
     }
 }
 
@@ -198,6 +197,9 @@ async function openMessage(msgId) {
     
     if (!msg) return;
 
+    // Simpan pesan ke global var untuk fitur share
+    currentOpenMsgData = msg;
+
     const initial = msg.from ? msg.from.charAt(0).toUpperCase() : '?';
     document.getElementById('modalSubject').innerText = msg.subject || '(No Subject)';
     document.getElementById('modalBody').innerText = msg.message;
@@ -222,6 +224,49 @@ async function openMessage(msgId) {
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('show');
+}
+
+// UPDATE: Fungsi Share Pesan
+function openMessageShare() {
+    if(!currentOpenMsgData) return;
+    
+    // Potong Body Pesan biar ga kepanjangan di kartu
+    let body = currentOpenMsgData.message;
+    if(body.length > 100) body = body.substring(0, 100) + '...';
+
+    // Mask Email Sendiri: user123@mail.com -> use***@mail.com
+    const [user, domain] = currentEmail.split('@');
+    const visiblePart = user.length > 3 ? user.substring(0, 3) : user.substring(0, 1);
+    const maskedEmail = `${visiblePart}***@${domain}`;
+
+    document.getElementById('shareMsgBody').innerText = body;
+    document.getElementById('shareMsgEmail').innerText = maskedEmail;
+
+    document.getElementById('shareMsgModal').classList.add('show');
+}
+
+function shareToWa() {
+    if(!currentOpenMsgData) return;
+    
+    const [user, domain] = currentEmail.split('@');
+    const visiblePart = user.length > 3 ? user.substring(0, 3) : user.substring(0, 1);
+    const maskedEmail = `${visiblePart}***@${domain}`;
+
+    const text = `Dapet pesan rahasia di SANN404 Mail! 🤫\n\n"${currentOpenMsgData.message}"\n\nDikirim ke: ${maskedEmail}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function copyShareText() {
+    if(!currentOpenMsgData) return;
+    const [user, domain] = currentEmail.split('@');
+    const visiblePart = user.length > 3 ? user.substring(0, 3) : user.substring(0, 1);
+    const maskedEmail = `${visiblePart}***@${domain}`;
+
+    const text = `"${currentOpenMsgData.message}"\n(Sent to: ${maskedEmail})`;
+    navigator.clipboard.writeText(text);
+    
+    closeModal('shareMsgModal');
+    showToast();
 }
 
 function updateBadge(count) {
@@ -259,26 +304,6 @@ function showToast() {
     const toast = document.getElementById('toast');
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2000);
-}
-
-// UPDATE: Fungsi Share Modal & Masking
-function openShareModal() {
-    if(!currentEmail) return;
-    
-    // Logic Masking: user123@mail.com -> use***@mail.com
-    const [user, domain] = currentEmail.split('@');
-    const visiblePart = user.length > 3 ? user.substring(0, 3) : user.substring(0, 1);
-    const maskedEmail = `${visiblePart}***@${domain}`;
-    
-    document.getElementById('maskedEmailDisplay').innerText = maskedEmail;
-    document.getElementById('shareModal').classList.add('show');
-}
-
-function copyMaskedText() {
-    const text = document.getElementById('maskedEmailDisplay').innerText;
-    navigator.clipboard.writeText(`Send me anonymous message here: ${text} (Use Temp Mail SANN404)`);
-    closeModal('shareModal');
-    showToast();
 }
 
 function startAutoRefresh() {
