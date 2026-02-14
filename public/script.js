@@ -56,6 +56,7 @@ function getAllMessagesFromDB() {
     });
 }
 
+// UPDATE: Hapus semua pesan
 function clearAllMessagesDB() {
     return new Promise((resolve) => {
         const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -63,6 +64,15 @@ function clearAllMessagesDB() {
         store.clear();
         tx.oncomplete = () => resolve();
     });
+}
+
+// UPDATE: Fungsi Tombol Hapus Inbox
+async function clearInbox() {
+    if(confirm('Hapus semua pesan dari penyimpanan?')) {
+        await clearAllMessagesDB();
+        renderMessages([]); // Bersihkan UI
+        document.getElementById('badge-count').style.display = 'none'; // Reset badge
+    }
 }
 
 function switchTab(viewId, element) {
@@ -140,7 +150,6 @@ async function fetchInbox() {
     }
 }
 
-// --- FUNGSI RENDER UTAMA DIUPDATE ---
 function renderMessages(messages) {
     const unreadContainer = document.getElementById('unreadList');
     const readContainer = document.getElementById('readList');
@@ -152,9 +161,7 @@ function renderMessages(messages) {
     messages.sort((a, b) => new Date(b.created) - new Date(a.created));
 
     messages.forEach((msg) => {
-        // Ambil inisial huruf pertama
         const initial = msg.from ? msg.from.charAt(0).toUpperCase() : '?';
-        // Format waktu (ambil jam saja biar rapi)
         const timeDisplay = msg.created.split(' ')[1] || msg.created;
 
         const html = `
@@ -191,12 +198,10 @@ async function openMessage(msgId) {
     
     if (!msg) return;
 
-    // Data untuk Modal
     const initial = msg.from ? msg.from.charAt(0).toUpperCase() : '?';
     document.getElementById('modalSubject').innerText = msg.subject || '(No Subject)';
     document.getElementById('modalBody').innerText = msg.message;
     
-    // Inject Meta Info ke Modal
     document.getElementById('modalMeta').innerHTML = `
         <div class="meta-avatar">${initial}</div>
         <div class="meta-info">
@@ -215,8 +220,8 @@ async function openMessage(msgId) {
     }
 }
 
-function closeModal() {
-    document.getElementById('msgModal').classList.remove('show');
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('show');
 }
 
 function updateBadge(count) {
@@ -247,9 +252,33 @@ function emptyState(type) {
 function copyEmail() {
     if (!currentEmail) return;
     navigator.clipboard.writeText(currentEmail);
+    showToast();
+}
+
+function showToast() {
     const toast = document.getElementById('toast');
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// UPDATE: Fungsi Share Modal & Masking
+function openShareModal() {
+    if(!currentEmail) return;
+    
+    // Logic Masking: user123@mail.com -> use***@mail.com
+    const [user, domain] = currentEmail.split('@');
+    const visiblePart = user.length > 3 ? user.substring(0, 3) : user.substring(0, 1);
+    const maskedEmail = `${visiblePart}***@${domain}`;
+    
+    document.getElementById('maskedEmailDisplay').innerText = maskedEmail;
+    document.getElementById('shareModal').classList.add('show');
+}
+
+function copyMaskedText() {
+    const text = document.getElementById('maskedEmailDisplay').innerText;
+    navigator.clipboard.writeText(`Send me anonymous message here: ${text} (Use Temp Mail SANN404)`);
+    closeModal('shareModal');
+    showToast();
 }
 
 function startAutoRefresh() {
