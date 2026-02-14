@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#F2F4F8">
-    <title>TempMail</title>
+    <title>Temp Mail SANN404</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/732/732200.png">
@@ -37,10 +37,7 @@
                 <label>Email Kamu Saat Ini</label>
                 <div class="email-display">
                     <span id="emailAddress">Generating...</span>
-                    <div class="action-group">
-                        <button onclick="openShareModal()" class="icon-btn" title="Share NGL Style"><i class="bi bi-share-fill"></i></button>
-                        <button onclick="copyEmail()" class="icon-btn" title="Copy Email"><i class="bi bi-copy"></i></button>
-                    </div>
+                    <button onclick="copyEmail()" class="copy-btn"><i class="bi bi-copy"></i></button>
                 </div>
                 <div class="status-indicator">
                     <span class="dot"></span> <span id="timerText">Auto-refresh: 10s</span>
@@ -137,30 +134,46 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalSubject">Subject</h3>
-                <button onclick="closeModal('msgModal')" class="close-btn"><i class="bi bi-x-lg"></i></button>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="openMessageShare()" class="share-btn-round"><i class="bi bi-share-fill"></i></button>
+                    <button onclick="closeModal('msgModal')" class="close-btn"><i class="bi bi-x-lg"></i></button>
+                </div>
             </div>
             <div class="modal-meta" id="modalMeta"></div> 
             <div class="modal-body" id="modalBody">...</div>
         </div>
     </div>
 
-    <div id="shareModal" class="modal" style="align-items: center; justify-content: center;">
-        <div class="modal-content" style="border-radius: 20px; max-width: 350px;">
-            <div class="modal-header">
-                <h3>Share Email</h3>
-                <button onclick="closeModal('shareModal')" class="close-btn"><i class="bi bi-x-lg"></i></button>
-            </div>
+    <div id="shareMsgModal" class="modal" style="align-items: center; justify-content: center;">
+        <div class="modal-content" style="border-radius: 24px; max-width: 360px; padding: 0; overflow: hidden; background: transparent; box-shadow: none;">
             
-            <div class="ngl-card">
-                <div class="ngl-icon">🤫</div>
-                <div class="ngl-title">Send me anonymous emails!</div>
-                <div class="ngl-email" id="maskedEmailDisplay">kewl***@domain.com</div>
-                <div class="ngl-footer">SANN404 Secure Mail</div>
+            <div class="ngl-msg-card">
+                <div class="ngl-header">
+                    <div class="ngl-icon-msg">📩</div>
+                    <span>Incoming Message</span>
+                </div>
+                
+                <div class="ngl-body-box" id="shareMsgBody">
+                    Isi pesan akan muncul di sini...
+                </div>
+
+                <div class="ngl-footer-info">
+                    Sent to: <span id="shareMsgEmail">kewl***@domain.com</span>
+                </div>
             </div>
 
-            <button onclick="copyMaskedText()" class="btn-whatsapp" style="width: 100%; justify-content: center; margin-top: 15px; background: var(--primary);">
-                <i class="bi bi-clipboard"></i> Copy Masked Text
-            </button>
+            <div style="background: white; padding: 20px; border-radius: 0 0 24px 24px;">
+                <button onclick="shareToWa()" class="btn-whatsapp" style="width: 100%; justify-content: center; margin-bottom: 10px;">
+                    <i class="bi bi-whatsapp"></i> Share ke WhatsApp
+                </button>
+                <button onclick="copyShareText()" class="btn-secondary-full">
+                    <i class="bi bi-clipboard"></i> Salin Teks
+                </button>
+                <button onclick="closeModal('shareMsgModal')" style="width: 100%; padding: 12px; background: transparent; border: none; color: #9CA3AF; margin-top: 5px; cursor: pointer;">
+                    Tutup
+                </button>
+            </div>
+
         </div>
     </div>
 
